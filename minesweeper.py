@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+Simple command line version of Minesweeper.
+Author: Steffen Smolka <steffen.smolka@gmail.com>
+"""
+
 import sys
 import random
 import itertools
