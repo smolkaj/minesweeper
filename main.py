@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+import sys
 import random
 import itertools
 import math
@@ -32,11 +34,11 @@ class Minesweeper:
 
   def _place_mines(self):
     random.seed()
+    fields = list(self.fields())
     for _ in range(self.mines):
-      while True:
-        (i, j) = (random.randrange(self.height), random.randrange(self.width))
-        if self.grid[i][j] != MINE: break
+      (i,j) = random.choice(fields)
       self.grid[i][j] = MINE
+      fields.remove((i,j))
 
   def neighbors(self, i, j):
     """Returns the neighbor fields to a given field, _including_ itself!"""
@@ -48,7 +50,7 @@ class Minesweeper:
     if self.state_grid[i][j] != COVERED:
       raise Illegal
     self.state_grid[i][j] = UNCOVERED
-    if self.grid[i][j] != MINE and self.grid[i][j] == 0:
+    if self.grid[i][j] == 0:
       self._uncover_cascade(i, j)
 
   def flag(self, i, j):
@@ -62,10 +64,8 @@ class Minesweeper:
     self.state_grid[i][j] = COVERED
 
   def game_lost(self):
-    for (i, j) in self.fields():
-      if self.grid[i][j] == MINE and self.state_grid[i][j] == UNCOVERED:
-        return True
-    return False
+    return any(self.grid[i][j] == MINE and self.state_grid[i][j] == UNCOVERED
+               for (i,j) in self.fields())
 
   def game_won(self):
     for (i, j) in self.fields():
@@ -121,6 +121,10 @@ def try_input_until(prompt, p=lambda _: True):
   while True:
     try:
       inp = input(prompt)
+    except EOFError:
+      # Ctrl + D
+      print('Goodbye!')
+      exit(0)
     except:
       continue
     if p(inp):
@@ -141,52 +145,57 @@ def custom_game_prompt():
 
   return Minesweeper(height=height, width=width, mines=mines)
 
-width = 80
-while True:
-  print("\n")
-  print("#"*width)
-  print(('{:#^' + str(width) + '}').format('  MINESWEEPER  '))
-  print("#"*width)
-  prompt = "What do you wanna do?\n\t(1) Quick Game\n\t(2) Custom Game\n\t(3) Exit\n>> "
-  inp = try_input_until(prompt, lambda s: s.isdigit() and (int(s) in range(1,4)))
-  inp = int(inp)
-  if inp == 1:
-    game = Minesweeper()
-  elif inp == 2:
-    game = custom_game_prompt()
-  else:
-    print("\n")
-    break
+if __name__ == '__main__':
+  if sys.version_info[0] != 3:
+    print('This script requires Python 3. Goodbye!')
+    exit(1)
 
-  while not game.game_over():
+  width = 80
+  while True:
     print("#"*width)
-    print(game)
-
-    prompt = "What do you wanna do?\n\t(1) Uncover\n\t(2) Flag\n\t(3) Unflag\n\t(4) Give Up\n>> "
-    inp = try_input_until(prompt, lambda s: s.isdigit() and (int(s) in range(1,5)))
-    action = int(inp)
-
-    if action == 4:
-      break
-    prompt = "Position?\n>> "
-    inp = try_input_until(prompt, lambda s: s.isdigit() and (int(s) in range(0,game.width*game.height)))
-    pos = int(inp)
-    i = pos // game.width
-    j = pos % game.width
-    if action == 1:
-      game.uncover(i, j)
-    elif action == 2:
-      game.flag(i, j)
-    elif action == 3:
-      game.unflag(i, j)
+    print(('{:#^' + str(width) + '}').format('  MINESWEEPER  '))
+    print("#"*width)
+    prompt = "What do you wanna do?\n\t(1) Quick Game\n\t(2) Custom Game\n\t(3) Exit\n>> "
+    inp = try_input_until(prompt, lambda s: s.isdigit() and (int(s) in range(1,4)))
+    inp = int(inp)
+    if inp == 1:
+      game = Minesweeper()
+    elif inp == 2:
+      game = custom_game_prompt()
     else:
-      raise Exception
+      print("\n")
+      break
 
-  print("#"*width)
-  print("#"*width)
-  print(game.__str__(True))
-  if(game.game_won()):
-    print("WINNER WINNER CHICKEN DINNER!!")
-  elif(game.game_lost()):
-    print("You lost, sucker!")
-  try_input_until("Press enter to continue. ")
+    while not game.game_over():
+      print("#"*width)
+      print(game)
+
+      prompt = "What do you wanna do?\n\t(1) Uncover\n\t(2) Flag\n\t(3) Unflag\n\t(4) Give Up\n>> "
+      inp = try_input_until(prompt, lambda s: s.isdigit() and (int(s) in range(1,5)))
+      action = int(inp)
+
+      if action == 4:
+        break
+      prompt = "Position?\n>> "
+      inp = try_input_until(prompt, lambda s: s.isdigit() and (int(s) in range(0,game.width*game.height)))
+      pos = int(inp)
+      i = pos // game.width
+      j = pos % game.width
+      if action == 1:
+        game.uncover(i, j)
+      elif action == 2:
+        game.flag(i, j)
+      elif action == 3:
+        game.unflag(i, j)
+      else:
+        raise Exception
+
+    print("#"*width)
+    print("#"*width)
+    print(game.__str__(True))
+    if(game.game_won()):
+      print("WINNER WINNER CHICKEN DINNER!!")
+    elif(game.game_lost()):
+      print("You lost, sucker!")
+    try_input_until("Press enter to continue. ")
+    print('\n')
