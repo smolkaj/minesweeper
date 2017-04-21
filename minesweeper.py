@@ -30,10 +30,8 @@ class Minesweeper:
     self.grid = [[0 for _ in range(width)] for _ in range(height)]
     self._place_mines()
     for (i, j) in self.fields():
-      if self.grid[i][j] == MINE: continue
-      for (k,l) in self.neighbors(i, j):
-        if self.grid[k][l] == MINE: 
-          self.grid[i][j] += 1
+      if self.grid[i][j] != MINE:
+        self.grid[i][j] = sum(self.grid[k][l] == MINE for (k,l) in self.neighbors(i,j))
 
     self.state_grid = [[COVERED for _ in range(width)] for _ in range(height)]
 
