@@ -20,6 +20,17 @@ FLAGGED = 2
 #
 MINE = -1
 
+# terminal colors
+def color(color, s):
+  return ("\033%s%s%s" % (color, s, "\033[0m"))
+
+def red(s):
+  return color("[0;31m", s)
+
+def blue(s):
+  return color("[0;34m", s)
+
+
 class Minesweeper:
   
   def __init__(self, height=10, width=10, mines=15):
@@ -95,7 +106,7 @@ class Minesweeper:
   def fields(self):
     return itertools.product(range(self.height), range(self.width))
 
-  def str_of_field(self, i, j, game_over=False):
+  def str_of_field(self, i, j, game_over=False, color=False):
     if self.state_grid[i][j] == COVERED and not game_over:
       return "[" + str(i*self.width + j) + "]"
     elif self.state_grid[i][j] == FLAGGED:
@@ -104,7 +115,10 @@ class Minesweeper:
       return "F"
     elif self.state_grid[i][j] == UNCOVERED or game_over:
       if self.grid[i][j] == MINE:
-        return "M"
+        if color:
+          return red("M")
+        else:
+          return "M"
       if self.grid[i][j] == 0:
         return "."
       else:
@@ -112,10 +126,10 @@ class Minesweeper:
     else:
       raise Exception
 
-  def __str__(self, game_over=False):
+  def __str__(self, game_over=False, color=False):
     field_width = math.floor(math.log((self.width+1) * (self.height+1), 10)) + 2
     f = (('{:^' + str(field_width) + '}') * self.width + '\n') * self.height
-    return f.format(*(self.str_of_field(i,j, game_over) for (i,j) in self.fields()))
+    return f.format(*(self.str_of_field(i,j, game_over, color=color) for (i,j) in self.fields()))
     
 
 ####################################################################################################
@@ -148,6 +162,8 @@ def custom_game_prompt():
 
   return Minesweeper(height=height, width=width, mines=mines)
 
+
+
 if __name__ == '__main__':
   if sys.version_info[0] != 3:
     print('This script requires Python 3. Goodbye!')
@@ -179,23 +195,29 @@ if __name__ == '__main__':
 
       if action == 4:
         break
-      prompt = "Position?\n>> "
-      inp = try_input_until(prompt, lambda s: s.isdigit() and (int(s) in range(0,game.width*game.height)))
-      pos = int(inp)
-      i = pos // game.width
-      j = pos % game.width
-      if action == 1:
-        game.uncover(i, j)
-      elif action == 2:
-        game.flag(i, j)
-      elif action == 3:
-        game.unflag(i, j)
-      else:
-        raise Exception
+      prompt = "Position(s)?\n>> "
+      def check_single(d):
+        return d.isdigit and (int(d) in range(0, game.width*game.height))
+      inp = try_input_until(prompt, lambda s: all(check_single(d) for d in s.split()))
+      positions = [int(d) for d in inp.split()]
+      for pos in positions:
+        i = pos // game.width
+        j = pos % game.width
+        try:
+          if action == 1:
+             game.uncover(i, j)
+          elif action == 2:
+            game.flag(i, j)
+          elif action == 3:
+            game.unflag(i, j)
+          else:
+            raise Exception
+        except Illegal:
+          print("Invalid move.")
 
     print("#"*width)
     print("#"*width)
-    print(game.__str__(True))
+    print(game.__str__(game_over=True, color=True))
     if(game.game_won()):
       print("WINNER WINNER CHICKEN DINNER!!")
     elif(game.game_lost()):
